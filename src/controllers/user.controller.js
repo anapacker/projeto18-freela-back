@@ -8,22 +8,23 @@ export async function getMiaudelos(req, res) {
         res.status(500).send(err.message)
     }
 }
+
 export async function postMiaudelos(req, res) {
-    const { name, photos, race, age, personality, weight, ferias } = req.body
-    const { userId } = req.params
+    const { name, photos, race, age, personality, weight, vacancy } = req.body
+    const { userId } = res.locals
 
     try {
         const miaudelos = await db.query(`
             SELECT 
-                * 
-            FROM 
-                miaudelos 
+                miaudelos.name, miaudelos."userId", users.id
+            FROM
+                miaudelos
             JOIN 
                 users 
             ON 
-                miaudelos.userId == users.id
+                miaudelos."userId" = users.id
             WHERE 
-                userId=$1 AND name=$2;    
+                "userId"=$1 AND miaudelos.name=$2;    
         `, [userId, name])
         if (miaudelos.rowCount > 0) {
             res.status(409).send('Este miaudelo já está cadastrado!')
@@ -43,10 +44,10 @@ export async function postMiaudelos(req, res) {
 
         await db.query(`
             INSERT INTO 
-                miaudelos (name,"raceId", age,personality,weight,ferias) 
+                miaudelos (name,"raceId", age,personality,weight,vacancy) 
             VALUES 
-                ($1, $2, $3, $4, $5)`,
-            [name, raceConsulta.rows[0].id, age, personality, weight, ferias])
+                ($1, $2, $3, $4, $5, $6)`,
+            [name, raceConsulta.rows[0].id, age, personality, weight, vacancy])
 
         let query = ('INSERT INTO photos (photo) VALUES ##valores##')
 
@@ -67,10 +68,27 @@ export async function postMiaudelos(req, res) {
 }
 
 export async function getMiaudelosById(req, res) {
-    res.send("getUsersById")
+    const { id } = req.params
+    try {
+        await db.query(`
+            SELECT 
+                * 
+            FROM 
+                miaudelos 
+            JOIN 
+                races ON races.id = miaudelos."raceId"
+              
+            WHERE 
+                id=$1
+            ;
+            `, [id])
+    } catch (err) {
+        res.status(500).send(err.message)
+    }
+
+    res.send("getMiaudelosById")
 }
 
 export async function putMiaudelo(req, res) {
     res.send("getUsersById")
 }
-
