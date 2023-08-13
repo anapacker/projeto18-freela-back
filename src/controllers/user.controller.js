@@ -70,18 +70,21 @@ export async function postMiaudelos(req, res) {
 export async function getMiaudelosById(req, res) {
     const { id } = req.params
     try {
-        await db.query(`
+        const result = await db.query(`
             SELECT 
-                * 
+                *
             FROM 
-                miaudelos 
+                miaudelos
             JOIN 
                 races ON races.id = miaudelos."raceId"
-              
             WHERE 
-                id=$1
+                miaudelos.id=$1
             ;
             `, [id])
+        if (result.rows.length === 0) {
+            return res.sendStatus(404)
+        }
+        res.send(result.rows[0])
     } catch (err) {
         res.status(500).send(err.message)
     }
@@ -90,5 +93,27 @@ export async function getMiaudelosById(req, res) {
 }
 
 export async function putMiaudelo(req, res) {
-    res.send("getUsersById")
+    const { name, photos, race, age, personality, weight, vacancy } = req.body
+    const { id } = req.params
+
+    try {
+        const response = await db.query(`
+            SELECT 
+                 * 
+            FROM 
+                miaudelos 
+            JOIN 
+                races ON races.id = miaudelos."raceId"
+            WHERE 
+                id=$1
+            ;
+    `       , [id])
+        if (response.rowCount === 0) return res.status(404).send("Miaudelo não encontrado.")
+
+
+        const status = await db.query(`UPDATE miaudelos SET vacancy=true WHERE id=$1`, [id])
+        res.send(status)
+    } catch (err) {
+        res.status(500).send(err.message)
+    }
 }
