@@ -1,4 +1,4 @@
-import { db } from "../database.js"
+import { getSessionByToken } from "../repositories/session.repository.js"
 
 export async function validateAuth(req, res, next) {
     const { authorization } = req.headers
@@ -6,7 +6,7 @@ export async function validateAuth(req, res, next) {
     if (!token) return res.sendStatus(401)
 
     try {
-        const session = await db.query(`SELECT * FROM sessions WHERE token=$1;`, [`${token}`])
+        const session = await getSessionByToken(token)
 
         if (!session.rowCount) return res.sendStatus(401)
 
