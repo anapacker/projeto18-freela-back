@@ -1,22 +1,18 @@
-import { db } from "../database.js"
 import bcrypt from "bcrypt"
 import { v4 } from "uuid"
+import { createUserDb, getUserByEmailDb } from "../repositories/user.repositories.js";
 
 export async function signup(req, res) {
     const { name, email, password, phone, cpf } = req.body
-    console.log("chegou aqui");
+
     try {
-        const user = await db.query(`SELECT * FROM users WHERE email=$1;`, [email])
+        const user = await getUserByEmailDb(email)
         if (user.rowCount > 0) return res.status(409).send("E-mail já cadastrado.")
-        const hashPassword = await bcrypt.hash(password, 10)
 
-        await db.query(`
-            INSERT INTO users (name, email, password, phone, cpf)
-            VALUES ($1, $2, $3, $4, $5);
-    `, [name, email, hashPassword, phone, cpf])
+        const hash = bcrypt.hashSync(password, 10)
+        await createUserDb(name, email, hash, phone, cpf)
+
         res.sendStatus(201)
-        console.log("chegou aqui 2");
-
     } catch (err) {
         return res.status(500).send(err.message)
     }

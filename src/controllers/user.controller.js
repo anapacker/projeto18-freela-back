@@ -97,7 +97,7 @@ export async function putMiaudelo(req, res) {
     const { id } = req.params
 
     try {
-        const response = await db.query(`
+        const miaudeloExists = await db.query(`
             SELECT 
                  * 
             FROM 
@@ -108,11 +108,25 @@ export async function putMiaudelo(req, res) {
                 id=$1
             ;
     `       , [id])
-        if (response.rowCount === 0) return res.status(404).send("Miaudelo não encontrado.")
+        if (miaudeloExists.rowCount === 0) return res.status(404).send("Miaudelo não encontrado.")
 
-
-        const status = await db.query(`UPDATE miaudelos SET vacancy=true WHERE id=$1`, [id])
-        res.send(status)
+        const updateQuery = await db.query(`
+            UPDATE miaudelos 
+            SET 
+                name=$2
+                "raceId"=$3
+                age=$4
+                personality=$5
+                weight=$6
+            WHERE 
+                miaudelos.id=$1
+                `, [id, name, photos, race, age, personality, weight, vacancy])
+        if (vacancy !== undefined) {
+            await db.query(`
+                UPDATE miaudelos SET vacancy=$2 WHERE id=$1;`, [id, vacancy])
+        }
+        res.send("Miaudelo atualizado com sucesso!")
+        res.send(updateQuery)
     } catch (err) {
         res.status(500).send(err.message)
     }
